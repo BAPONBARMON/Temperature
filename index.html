@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>City Temp Finder</title>
+  <title>City Temperature</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
     body {
@@ -17,7 +17,7 @@
 </head>
 <body class="min-h-screen flex items-center justify-center p-4">
   <div class="w-full max-w-md bg-white rounded-2xl shadow-xl p-6">
-    <h2 class="text-2xl font-bold text-center mb-6 text-blue-600">🌍 Enter Your City</h2>
+    <h2 class="text-2xl font-bold text-center mb-4 text-blue-600">🌍 Enter Your City</h2>
     
     <input
       id="cityInput"
@@ -32,7 +32,14 @@
       id="suggestions"
       class="mt-2 rounded-xl border bg-white shadow hidden max-h-60 overflow-y-auto"
     ></ul>
-    
+
+    <button
+      onclick="fetchTemperature()"
+      class="mt-4 w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-xl font-semibold"
+    >
+      🔍 Get Temperature
+    </button>
+
     <p id="tempBox" class="text-center mt-6 text-xl text-red-500"></p>
     <p class="text-sm text-gray-500 mt-4 text-center">Powered by BAPON BARMON</p>
   </div>
@@ -46,39 +53,47 @@
         return;
       }
 
-      const res = await fetch(
-        `https://geodb-free-service.wirefreethought.com/v1/geo/cities?namePrefix=${query}&limit=5`
-      );
-      const data = await res.json();
-      const cities = data.data;
+      try {
+        const res = await fetch(
+          `https://geodb-free-service.wirefreethought.com/v1/geo/cities?namePrefix=${query}&limit=5`
+        );
+        const data = await res.json();
+        const cities = data.data;
 
-      box.innerHTML = cities.length === 0
-        ? "<li class='px-4 py-2 text-gray-400'>No results</li>"
-        : cities.map(city =>
-            `<li class="px-4 py-2 cursor-pointer" onclick="selectCity('${city.name}')">${city.name}, ${city.countryCode}</li>`
-          ).join("");
+        box.innerHTML = cities.length === 0
+          ? "<li class='px-4 py-2 text-gray-400'>No results</li>"
+          : cities.map(city =>
+              `<li class="px-4 py-2 cursor-pointer" onclick="selectCity('${city.name}')">${city.name}, ${city.countryCode}</li>`
+            ).join("");
 
-      box.classList.remove("hidden");
+        box.classList.remove("hidden");
+      } catch (e) {
+        box.innerHTML = "<li class='px-4 py-2 text-gray-400'>Error loading suggestions</li>";
+        box.classList.remove("hidden");
+      }
     }
 
     function selectCity(name) {
       document.getElementById("cityInput").value = name;
       document.getElementById("suggestions").classList.add("hidden");
-      fetchTemperature(name);
     }
 
-    async function fetchTemperature(cityName) {
+    async function fetchTemperature() {
+      const cityName = document.getElementById("cityInput").value;
       const tempBox = document.getElementById("tempBox");
+
+      if (!cityName.trim()) {
+        tempBox.textContent = "⚠️ Please enter a city name.";
+        return;
+      }
+
       tempBox.textContent = "🔄 Fetching temperature...";
-      
       try {
         const res = await fetch(`https://temperature-backend.onrender.com?city=${encodeURIComponent(cityName)}`);
-        if (!res.ok) throw new Error("Network response error");
-        
         const data = await res.json();
         tempBox.textContent = `🌡️ Temperature in ${data.city}: ${data.temperature}`;
       } catch (err) {
-        tempBox.textContent = "⚠️ Error fetching temperature.";
+        tempBox.textContent = "❌ Error fetching data from server.";
         console.error(err);
       }
     }
