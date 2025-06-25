@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>City Temperature Tracker</title>
+  <link rel="stylesheet" href="public/style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+  <div class="container">
+    <h1>🌡️ City Temperature Tracker</h1>
+    <input type="text" id="city" placeholder="Enter Indian city name..." oninput="autocompleteCity(this.value)" />
+    <ul id="suggestions"></ul>
+    <button onclick="fetchWeather()">Check Weather</button>
+    <div id="spinner" class="spinner hidden"></div>
+    <div id="output"></div>
+    <canvas id="chart" width="400" height="200" class="hidden"></canvas>
+  </div>
+  <script src="script.js"></script>
+</body>
+</html>
