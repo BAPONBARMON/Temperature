@@ -1,91 +1,59 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>City Temperature Tracker</title>
-  <style>
-    body {
-      background: linear-gradient(to bottom right, #dbeafe, #f0f4ff);
-      font-family: Arial, sans-serif;
-      text-align: center;
-      padding: 50px 20px;
-    }
-    h1 {
-      font-size: 26px;
-      color: #111827;
-      margin-bottom: 20px;
-    }
-    input {
-      padding: 10px;
-      width: 250px;
-      border-radius: 6px;
-      border: 1px solid #ccc;
-      font-size: 16px;
-    }
-    button {
-      padding: 10px 20px;
-      margin-left: 10px;
-      background-color: #2563eb;
-      color: white;
-      border: none;
-      border-radius: 6px;
-      font-size: 16px;
-      cursor: pointer;
-    }
-    button:disabled {
-      background-color: #9ca3af;
-      cursor: not-allowed;
-    }
-    #result {
-      margin-top: 30px;
-      font-size: 18px;
-      color: #1f2937;
-    }
-    #loader {
-      margin-top: 20px;
-      font-size: 16px;
-      color: #6b7280;
-    }
-  </style>
-</head>
-<body>
-  <h1>🌡️ City Temperature Tracker</h1>
-  <input type="text" id="cityInput" placeholder="Enter city name" />
-  <button onclick="getWeather()">Check Weather</button>
-  <div id="loader"></div>
-  <div id="result"></div>
+<input list="citySuggestions" id="cityInput" placeholder="Enter city name..." />
+<datalist id="citySuggestions"></datalist>
 
-  <script>
-    async function getWeather() {
-      const city = document.getElementById('cityInput').value.trim();
-      const resultDiv = document.getElementById('result');
-      const loaderDiv = document.getElementById('loader');
+<button onclick="getWeather()">Get Temperature</button>
+<div id="loader"></div>
+<div id="result"></div>
 
-      resultDiv.innerHTML = '';
-      loaderDiv.innerHTML = 'Loading...';
+<script>
+  let cityList = [];
 
-      if (!city) {
-        loaderDiv.innerHTML = '';
-        resultDiv.innerHTML = 'Please enter a city name.';
-        return;
+  // Load all Assam city names from JSON
+  fetch('cities.json')
+    .then(res => res.json())
+    .then(data => {
+      cityList = data;
+    });
+
+  const input = document.getElementById('cityInput');
+  const dataList = document.getElementById('citySuggestions');
+
+  input.addEventListener('input', function () {
+    const val = this.value.toLowerCase();
+    dataList.innerHTML = '';
+
+    const matches = cityList.filter(city =>
+      city.toLowerCase().startsWith(val)
+    );
+
+    matches.forEach(city => {
+      const option = document.createElement('option');
+      option.value = city;
+      dataList.appendChild(option);
+    });
+  });
+
+  async function getWeather() {
+    const city = input.value.trim();
+    const result = document.getElementById('result');
+    const loader = document.getElementById('loader');
+
+    result.innerHTML = '';
+    loader.innerHTML = '🔄 Loading...';
+
+    try {
+      const res = await fetch('https://temperature-backend.onrender.com/weather?city=' + encodeURIComponent(city));
+      const data = await res.json();
+
+      loader.innerHTML = '';
+      if (data.error) {
+        result.innerHTML = '❌ ' + data.error;
+      } else {
+        result.innerHTML = `🌡️ Temperature in <b>${data.city}</b> is <b>${data.temperature}°C</b>`;
       }
-
-      try {
-        const response = await fetch('https://temperature-backend.onrender.com/weather?city=' + encodeURIComponent(city));
-        const data = await response.json();
-        loaderDiv.innerHTML = '';
-
-        if (data.error) {
-          resultDiv.innerHTML = '❌ ' + data.error;
-        } else {
-          resultDiv.innerHTML = `✅ Temperature in <strong>${data.city}</strong> is <strong>${data.temperature}°C</strong>`;
-        }
-      } catch (error) {
-        loaderDiv.innerHTML = '';
-        resultDiv.innerHTML = '⚠️ Error fetching data. Please try again.';
-      }
+    } catch {
+      loader.innerHTML = '';
+      result.innerHTML = '⚠️ Error contacting server.';
     }
-  </script>
-</body>
-</html>
+  }
+</script>
