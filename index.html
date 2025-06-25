@@ -2,20 +2,154 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>City Temperature Tracker</title>
-  <link rel="stylesheet" href="public/style.css" />
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>RemixCleaner - No Copyright Tool</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #121212;
+      color: white;
+      text-align: center;
+      padding: 2rem;
+    }
+    .container {
+      max-width: 500px;
+      margin: auto;
+    }
+    .hidden {
+      display: none;
+    }
+    .btn {
+      background: #00b894;
+      color: white;
+      padding: 10px 20px;
+      margin: 10px;
+      border: none;
+      cursor: pointer;
+      border-radius: 5px;
+    }
+    .btn:disabled {
+      background: #636e72;
+      cursor: not-allowed;
+    }
+    #progressBar {
+      width: 100%;
+      background: #333;
+      border-radius: 5px;
+      margin: 10px 0;
+    }
+    #progressBarFill {
+      height: 20px;
+      width: 0%;
+      background: #00cec9;
+      border-radius: 5px;
+      transition: width 0.3s;
+    }
+    footer {
+      margin-top: 30px;
+      font-size: 14px;
+      color: #888;
+    }
+  </style>
 </head>
 <body>
   <div class="container">
-    <h1>🌡️ City Temperature Tracker</h1>
-    <input type="text" id="city" placeholder="Enter Indian city name..." oninput="autocompleteCity(this.value)" />
-    <ul id="suggestions"></ul>
-    <button onclick="fetchWeather()">Check Weather</button>
-    <div id="spinner" class="spinner hidden"></div>
-    <div id="output"></div>
-    <canvas id="chart" width="400" height="200" class="hidden"></canvas>
+    <h1>RemixCleaner</h1>
+    <p>No Copyright Remix Video Tool</p>
+
+    <input type="file" id="videoInput" accept="video/*" />
+    <br />
+    <button id="uploadBtn" class="btn">Upload</button>
+    <button id="modifyBtn" class="btn" disabled>Modify</button>
+    <button id="downloadBtn" class="btn hidden">Download</button>
+
+    <div id="progressBar">
+      <div id="progressBarFill"></div>
+    </div>
+
+    <p id="statusText"></p>
+
+    <footer>
+      Powered by BAPON BARMON
+    </footer>
   </div>
-  <script src="script.js"></script>
+
+  <script>
+    const uploadBtn = document.getElementById('uploadBtn');
+    const modifyBtn = document.getElementById('modifyBtn');
+    const downloadBtn = document.getElementById('downloadBtn');
+    const videoInput = document.getElementById('videoInput');
+    const progressBarFill = document.getElementById('progressBarFill');
+    const statusText = document.getElementById('statusText');
+
+    let uploadedFile = null;
+    let processedBlob = null;
+
+    uploadBtn.onclick = () => {
+      const file = videoInput.files[0];
+      if (!file) {
+        alert("Please select a video file.");
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append("video", file);
+
+      statusText.textContent = "Uploading...";
+      progressBarFill.style.width = "10%";
+
+      fetch("https://temperature-backend.onrender.com/upload", {
+        method: "POST",
+        body: formData,
+      })
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.success) {
+            statusText.textContent = "Upload successful!";
+            uploadedFile = file;
+            modifyBtn.disabled = false;
+            progressBarFill.style.width = "30%";
+          } else {
+            statusText.textContent = "Upload failed.";
+          }
+        })
+        .catch(() => {
+          statusText.textContent = "Error uploading file.";
+        });
+    };
+
+    modifyBtn.onclick = () => {
+      if (!uploadedFile) return;
+
+      modifyBtn.disabled = true;
+      statusText.textContent = "Processing...";
+      progressBarFill.style.width = "50%";
+
+      fetch("https://temperature-backend.onrender.com/modify", {
+        method: "POST",
+      })
+        .then((res) => res.blob())
+        .then((blob) => {
+          processedBlob = blob;
+          statusText.textContent = "Modification complete!";
+          progressBarFill.style.width = "100%";
+          downloadBtn.classList.remove("hidden");
+        })
+        .catch(() => {
+          statusText.textContent = "Error modifying video.";
+        });
+    };
+
+    downloadBtn.onclick = () => {
+      if (!processedBlob) return;
+
+      const url = URL.createObjectURL(processedBlob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "remixed_video.mp4";
+      a.click();
+      URL.revokeObjectURL(url);
+    };
+  </script>
 </body>
 </html>
